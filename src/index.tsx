@@ -5,37 +5,72 @@ import {
   staticClasses
 } from "@decky/ui";
 import {
-  addEventListener,
   removeEventListener,
   callable,
   definePlugin,
   toaster,
 } from "@decky/api"
 import { FaShip } from "react-icons/fa";
+import { useCallback, useEffect, useState } from "react";
 
-// import logo from "../assets/logo.png";
+// Service status from backend
+export interface ServiceStatus {
+  running: boolean;
+  enabled: boolean;
+  service: string;
+  state: string;
+}
 
 const startService = callable<[], boolean>("start_playercast");
 const stopService = callable<[], boolean>("stop_playercast");
+const getStatus = callable<[], ServiceStatus>("get_status");
 
 function Content() {
-  const startServiceOnClick = async () => {
+  const [status, setStatus] = useState<ServiceStatus | null>(null);
+
+  
+  const refreshStatus = useCallback(async () => {
+    try {
+      const newStatus = await getStatus();
+      setStatus(newStatus);
+    } catch (error) {
+      console.error("Failed to get status:", error);
+      toaster.toast({
+        title: "Failed to get casting service status",
+        body: "Failed to get casting service status"
+      });
+    }
+  }, []);
+
+  const startServiceOnClick = useCallback(async () => {
     const success = await startService();
     
     toaster.toast({
       title: success ? "Chromecast started" : "Failed to start",
       body: success ? "The steam deck is ready for casting content." : "Failed to start service for casting, try again later"
     });
-  };
 
-  const stopServiceOnClick = async () => {
+    await refreshStatus();
+  }, [refreshStatus]);
+
+  const stopServiceOnClick = useCallback(async () => {
     const success = await stopService();
     
     toaster.toast({
       title: success ? "Chromecast stopped" : "Failed to stop",
       body: success ? "Stopped casting servcie" : "Failed to stop service for casting, try again later"
     });
-  };
+
+    await refreshStatus();
+  }, [refreshStatus]);
+
+  useEffect(() => {
+    const loadInitialStatus = async () => {
+      await refreshStatus();
+    };
+
+    loadInitialStatus();
+  }, [refreshStatus]);
   
   return (
     <PanelSection title="Panel Section">
@@ -62,28 +97,11 @@ function Content() {
 export default definePlugin(() => {
   console.log("Template plugin initializing, this is called once on frontend startup")
 
-  // serverApi.routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
-  //   exact: true,
-  // });
-
-  // Add an event listener to the "timer_event" event from the backend
-  const listener = addEventListener<[
-    test1: string,
-    test2: boolean,
-    test3: number
-  ]>("timer_event", (test1, test2, test3) => {
-    console.log("Template got timer_event with:", test1, test2, test3)
-    toaster.toast({
-      title: "template got timer_event",
-      body: `${test1}, ${test2}, ${test3}`
-    });
-  });
-
   return {
     // The name shown in various decky menus
-    name: "Test Plugin",
+    name: "Chromecast Receiver",
     // The element displayed at the top of your plugin's menu
-    titleView: <div className={staticClasses.Title}>Decky Example Plugin</div>,
+    titleView: <div className={staticClasses.Title}>Chromecast Receiver</div>,
     // The content of your plugin's menu
     content: <Content />,
     // The icon displayed in the plugin list

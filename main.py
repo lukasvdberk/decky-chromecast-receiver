@@ -34,7 +34,7 @@ class Plugin:
 
     async def start_playercast(self):
         try:
-            status = await self._get_status()
+            status = await self.get_status()
 
             # Start the service if not already running
             if not status["running"]:
@@ -44,7 +44,7 @@ class Plugin:
                 if start_service_success:
                     # Wait a moment and check status again
                     await asyncio.sleep(1)
-                    status = await self._get_status()
+                    status = await self.get_status()
                     decky.logger.info(f"Plugin loaded successfully. Status: {status}")
                 else:
                     decky.logger.error("Failed to start playercast service")
@@ -53,6 +53,29 @@ class Plugin:
         except Exception as e:
             decky.logger.error(f"Failed start playercast systemd service: {SERVICE_NAME}: {e}", exc_info=True)
             return False
+
+    async def stop_playercast(self):
+        try:
+            status = await self.get_status()
+
+            # Start the service if not already running
+            if not status["running"]:
+                start_service_success, _, _ = await self._run_systemctl("stop", SERVICE_NAME)
+
+
+                if start_service_success:
+                    # Wait a moment and check status again
+                    await asyncio.sleep(1)
+                    status = await self.get_status()
+                    decky.logger.info(f"Plugin loaded successfully. Status: {status}")
+                else:
+                    decky.logger.error("Failed to stop playercast service")
+            else:
+                decky.logger.info("Playercast service already running")
+        except Exception as e:
+            decky.logger.error(f"Failed stop playercast systemd service: {SERVICE_NAME}: {e}", exc_info=True)
+            return False
+
 
     async def _setup_playercast_service(self):
         """
@@ -121,7 +144,7 @@ WantedBy=default.target
             decky.logger.error(f"Failed to run systemctl: {e}", exc_info=True)
             return False, "", str(e)
 
-    async def _get_status(self):
+    async def get_status(self):
         """Get the status of playercast service."""
         try:
             # Check if service is active
