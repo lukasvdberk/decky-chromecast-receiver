@@ -1,5 +1,6 @@
 import {
   ButtonItem,
+  Field,
   PanelSection,
   PanelSectionRow,
   staticClasses
@@ -74,6 +75,19 @@ function Content() {
   
   return (
     <PanelSection title="Panel Section">
+      <PanelSectionRow>
+        <Field
+          label={"Status"}
+          description={status?.state || "unknown"}
+        >
+          <span style={{
+            color: status?.running ? "green" : "red",
+            fontWeight: "bold"
+          }}>
+            {status?.running ? "running" : "stopped"}
+          </span>
+        </Field>
+      </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem
           layout="below"
