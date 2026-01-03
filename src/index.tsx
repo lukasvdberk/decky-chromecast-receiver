@@ -2,7 +2,6 @@ import {
   ButtonItem,
   PanelSection,
   PanelSectionRow,
-  Navigation,
   staticClasses
 } from "@decky/ui";
 import {
@@ -11,60 +10,51 @@ import {
   callable,
   definePlugin,
   toaster,
-  // routerHook
 } from "@decky/api"
-import { useState } from "react";
 import { FaShip } from "react-icons/fa";
 
 // import logo from "../assets/logo.png";
 
-const startService = callable<[], void>("start_timer");
-const stopService = 
+const startService = callable<[], boolean>("start_playercast");
+const stopService = callable<[], boolean>("stop_playercast");
 
 function Content() {
-  const [result, setResult] = useState<number | undefined>();
-
-  const onClick = async () => {
-    const result = await add(Math.random(), Math.random());
-    setResult(result);
+  const startServiceOnClick = async () => {
+    const success = await startService();
+    
+    toaster.toast({
+      title: success ? "Chromecast started" : "Failed to start",
+      body: success ? "The steam deck is ready for casting content." : "Failed to start service for casting, try again later"
+    });
   };
 
+  const stopServiceOnClick = async () => {
+    const success = await stopService();
+    
+    toaster.toast({
+      title: success ? "Chromecast stopped" : "Failed to stop",
+      body: success ? "Stopped casting servcie" : "Failed to stop service for casting, try again later"
+    });
+  };
+  
   return (
     <PanelSection title="Panel Section">
       <PanelSectionRow>
         <ButtonItem
           layout="below"
-          onClick={onClick}
+          onClick={startServiceOnClick}
         >
-          {result ?? "Add two numbers via Python"}
+          { "Start casting" }
         </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
         <ButtonItem
           layout="below"
-          onClick={() => startTimer()}
+          onClick={stopServiceOnClick}
         >
-          {"Start Python timer"}
+          {"Stop casting"}
         </ButtonItem>
       </PanelSectionRow>
-
-      {/* <PanelSectionRow>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <img src={logo} />
-        </div>
-      </PanelSectionRow> */}
-
-      {/*<PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => {
-            Navigation.Navigate("/decky-plugin-test");
-            Navigation.CloseSideMenus();
-          }}
-        >
-          Router
-        </ButtonItem>
-      </PanelSectionRow>*/}
     </PanelSection>
   );
 };

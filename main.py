@@ -32,6 +32,28 @@ class Plugin:
     async def _migration(self):
         decky.logger.info(f"Migrating plugin {PLUGIN_NAME}")
 
+    async def start_playercast(self):
+        try:
+            status = await self._get_status()
+
+            # Start the service if not already running
+            if not status["running"]:
+                start_service_success, _, _ = await self._run_systemctl("start", SERVICE_NAME)
+
+
+                if start_service_success:
+                    # Wait a moment and check status again
+                    await asyncio.sleep(1)
+                    status = await self._get_status()
+                    decky.logger.info(f"Plugin loaded successfully. Status: {status}")
+                else:
+                    decky.logger.error("Failed to start playercast service")
+            else:
+                decky.logger.info("Playercast service already running")
+        except Exception as e:
+            decky.logger.error(f"Failed start playercast systemd service: {SERVICE_NAME}: {e}", exc_info=True)
+            return False
+
     async def _setup_playercast_service(self):
         """
         Setup player cast systemd service for long running service that goes outside the lifetime of this plugin script
@@ -54,28 +76,7 @@ class Plugin:
             decky.logger.error(f"Failed to reload daemon: {e}", exc_info=True)
             return False
 
-    async def start_playercast(self):
-        try:
-            status = await self._get_status()
 
-            # Start the service if not already running
-            if not status["running"]:
-                start_service_success, _, _ = await self._run_systemctl("start", SERVICE_NAME)
-
-
-                if start_service_success:
-                    # Wait a moment and check status again
-                    await asyncio.sleep(1)
-                    status = await self._get_status()
-                    decky.logger.info(f"Plugin loaded successfully. Status: {status}")
-                else:
-                    decky.logger.error("Failed to start playercast service")
-            else:
-                decky.logger.info("Playercast service already running")
-        except Exception as e:
-            decky.logger.error(f"Failed start playercast systemd service: {SERVICE_NAME}: {e}", exc_info=True)
-            return False
-        
     async def _player_cast_system_d_service_file_content(self):
         return f"""
 [Unit]
